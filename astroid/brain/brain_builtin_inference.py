@@ -5,6 +5,7 @@
 """Astroid hooks for various builtins."""
 
 from __future__ import annotations
+from typing import Iterator
 
 import itertools
 from collections.abc import Iterator
@@ -66,7 +67,6 @@ class whatever(object):
     def ljust(self, width, fillchar=None):
         return {rvalue}
 """
-
 
 BYTES_CLASS = """
 class whatever(object):
@@ -921,6 +921,15 @@ def _is_str_format_call(node: nodes.Call) -> bool:
     )
 
 
+def _is_str_format_call(node: nodes.Call) -> bool:
+    """Catch calls to str.format()."""
+    return (
+        isinstance(node.func, nodes.Attribute)
+        and node.func.attrname == "format"
+        and isinstance(node.func.expr, nodes.Const)
+        and isinstance(node.func.expr.value, str)
+    )
+
 def _infer_str_format_call(
     node: nodes.Call, context: InferenceContext | None = None
 ) -> Iterator[nodes.Const | type[util.Uninferable]]:
@@ -981,7 +990,9 @@ AstroidManager().register_transform(
     inference_tip(_infer_object__new__decorator),
     _infer_object__new__decorator_check,
 )
-
+AstroidManager().register_transform(
+    nodes.Call, inference_tip(_infer_str_format_call), _is_str_format_call
+)
 AstroidManager().register_transform(
     nodes.Call,
     inference_tip(_infer_copy_method),
