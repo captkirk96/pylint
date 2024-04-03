@@ -1,9 +1,3 @@
-# Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
-# For details: https://github.com/PyCQA/astroid/blob/main/LICENSE
-# Copyright (c) https://github.com/PyCQA/astroid/blob/main/CONTRIBUTORS.txt
-
-"""Unit Tests for the builtins brain module."""
-
 import unittest
 
 import pytest
@@ -39,7 +33,7 @@ class TestStringNodes:
                 id="numbered-indexes",
             ),
             pytest.param(
-                """"My name is {fname}, I'm {age}".format(fname = "Daniel", age = 12)""",
+                """"My name is {fname}, I'm {age}".format(fname="Daniel", age=12)""",
                 id="named-indexes",
             ),
             pytest.param(
@@ -54,7 +48,7 @@ class TestStringNodes:
                 """
         name = "Daniel"
         age = 12
-        "My name is {fname}, I'm {age}".format(fname = name, age = age)
+        "My name is {fname}, I'm {age}".format(fname=name, age=age)
         """,
                 id="named-indexes-from-keyword",
             ),
@@ -62,7 +56,7 @@ class TestStringNodes:
                 """
         name = "Daniel"
         age = 12
-        "My name is {0}, I'm {age}".format(name, age = age)
+        "My name is {0}, I'm {age}".format(name, age=age)
         """,
                 id="mixed-indexes-from-mixed",
             ),
@@ -81,12 +75,12 @@ class TestStringNodes:
             from missing import Unknown
             name = Unknown
             age = 12
-            "My name is {fname}, I'm {age}".format(fname = name, age = age)
+            "My name is {fname}, I'm {age}".format(fname=name, age=age)
             """,
             """
             from missing import Unknown
             age = 12
-            "My name is {fname}, I'm {age}".format(fname = Unknown, age = age)
+            "My name is {fname}, I'm {age}".format(fname=Unknown, age=age)
             """,
             """
             from missing import Unknown
@@ -94,7 +88,7 @@ class TestStringNodes:
             """,
             """"I am {}".format()""",
             """
-            "My name is {fname}, I'm {age}".format(fsname = "Daniel", age = 12)
+            "My name is {fname}, I'm {age}".format(fname="Daniel", age=12)
             """,
         ],
     )
@@ -110,3 +104,14 @@ class TestStringNodes:
         inferred = next(node.infer())
         assert isinstance(inferred, nodes.Const)
         assert inferred.value == "My name is Daniel, I'm 12.00"
+
+    def test_string_format_with_name(self) -> None:
+        node: nodes.Call = _extract_single_node(
+            """
+            x = 'python is {}'
+            x.format('helpful sometimes') #@
+            """
+        )
+        inferred = next(node.infer())
+        assert isinstance(inferred, nodes.Const)
+        assert inferred.value == "python is helpful sometimes"
